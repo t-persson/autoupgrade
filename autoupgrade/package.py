@@ -10,10 +10,7 @@ import pkg_resources
 from .exceptions import NoVersionsError, PIPError, PkgNotFoundError
 from .utils import ver_to_tuple
 
-try:
-    from urllib.request import urlopen
-except Exception:
-    from urllib import urlopen
+import requests
 
 
 class Package(object):
@@ -131,12 +128,12 @@ class Package(object):
 
     def _get_highest_version(self):
         url = "{}/{}/".format(self.index, self.pkg)
-        html = urlopen(url)
-        if html.getcode() != 200:
+        r = requests.get(url)
+        if r.status_code != 200:
             raise PkgNotFoundError
         pattr = r'>{}-(.+?)<'.format(self.pkg)
         versions = map(ver_to_tuple,
-                       re.findall(pattr, html.read(), flags=re.I))
+                       re.findall(pattr, r.text, flags=re.I))
         if not versions:
             raise NoVersionsError
         return max(versions)
